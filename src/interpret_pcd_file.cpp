@@ -100,7 +100,7 @@ int main(int argc, char** argv) {
     for (int ipt = 0; ipt < npts_cloud; ipt++) {
         cloud_pt = output_cloud_ptr->points[ipt].getVector3fMap();
         z = cloud_pt[2];
-        if (z > 0.0) {    //if (z > 0.0) {       can' t include number like 0.0002...
+        if (z > 0.0) {    //if (z > 0.0) {
             ntop++;
             z_sum += z;
         }
@@ -212,7 +212,7 @@ int main(int argc, char** argv) {
         for (theta=0;theta<6.28;theta+=0.01) {
             u= round(r*sin(theta))+tu_c;
             v= round(r*cos(theta))+tv_c;
-            cout<<"tu= "<<u<<", tv = "<<v<<endl;
+            //cout<<"tu= "<<u<<", tv = "<<v<<endl;
             template_img.at<uchar>(u, v) = 255;
         }
     }
@@ -288,7 +288,8 @@ int main(int argc, char** argv) {
 		int match_method = CV_TM_CCORR_NORMED;
 		cv::matchTemplate(src_img, template_img, result_mat, match_method);
 		cv::normalize(result_mat, result_mat, 0, 1, cv::NORM_MINMAX, -1, cv::Mat());*/
-    int match_method = CV_TM_SQDIFF_NORMED; //CV_TM_SQDIFF
+    //int match_method = CV_TM_SQDIFF_NORMED; //CV_TM_SQDIFF
+    int match_method = CV_TM_SQDIFF;
     cv::matchTemplate(padded_img, template_img, result_mat, match_method);
     //take sqrt of all match values:
     /*
@@ -314,12 +315,12 @@ int main(int argc, char** argv) {
     cout<<"minVal for first match: "<<minVal<<endl;
 
 
-    int x_fit = minLoc.x;
-    int y_fit = minLoc.y;
+    int x_fit = minLoc.y;
+    int y_fit = minLoc.x;
     cout<<"x_fit = "<<x_fit<<"; y_fit = "<<y_fit<<endl;
     //erase this match and try again:
     for (int i=x_fit-Rpix+tu_c-1;i<=x_fit+Rpix+tu_c+1;i++) {
-        for (int j=y_fit-Rpix+tv_c-1;j<=y_fit+Rpix+tv_c+1;j++) {
+        for (int j=y_fit-Rpix+tv_c;j<=y_fit+Rpix+tv_c;j++) {
             padded_img.at<uchar>(i,j) = 0;
         }
     }
