@@ -167,6 +167,11 @@ int main(int argc, char** argv) {
     //see OpenCV: void matchTemplate(InputArray image, InputArray templ, OutputArray result, int method)
 	//cv::Mat src_img, template_img;
 	//cv::Mat result_mat;
+
+
+
+
+/*
     int Ntu = 23; //define template 10x10 (arbitrary)
     int Ntv = 23; 
     int tu_c = 11; //(7,7) is central pixel of template 15x15 template
@@ -186,7 +191,37 @@ int main(int argc, char** argv) {
             cout<<"tu= "<<u<<", tv = "<<v<<endl;
             template_img.at<uchar>(u, v) = 255;
         }
+    }*/
+
+
+
+
+    int Ntu = 13; //define template 10x10 (arbitrary)
+    int Ntv = 13; 
+    int tu_c = 6; //(7,7) is central pixel of template 15x15 template
+    int tv_c = 6;
+    int template_u_halfwidth = 6; //template is +/-5 pixels about center
+    int template_v_halfwidth = 6;
+    
+    //here is the pattern of interest: a circle of diameter Ntu = Ntv pixels
+    //this template is for the "disk" part
+    cv::Mat template_img(Ntu, Ntv, CV_8U, cv::Scalar(0)); //create image, set encoding and size, init pixels to default val
+    int Rpix = 5; //make a template of a circle of radius 7 pixels
+    double r,theta;
+    for (r=0;r<=Rpix;r+=0.2) {
+        for (theta=0;theta<6.28;theta+=0.01) {
+            u= round(r*sin(theta))+tu_c;
+            v= round(r*cos(theta))+tv_c;
+            cout<<"tu= "<<u<<", tv = "<<v<<endl;
+            template_img.at<uchar>(u, v) = 255;
+        }
     }
+
+
+
+
+
+
     /*
     for (u=2;u<2+hu;u++) {
         for (v=2;v<2+wv;v++) {
@@ -197,6 +232,9 @@ int main(int argc, char** argv) {
     cout<<"created template"<<endl;
     cv::imwrite("template_img.bmp", template_img);    
     
+
+
+/*
     //THE FOLLOWING IS FOR CREATING A  SYNTHETIC IMAGE, FOR TESTING ONLY
     //REPLACE THIS WITH REAL IMAGE, i.e. depthmap_image, as computed above 
     int hu= 5; //define dimensions of a rectangle; height corresponds to u axis
@@ -217,7 +255,11 @@ int main(int argc, char** argv) {
     cout<<"created false image"<<endl;
     cv::imwrite("embedded_img.bmp", embedded_img);    
     //END OF SYNTHESIZING TEST IMAGE
-    
+    */
+
+
+
+
     //create a larger image with room for padding around the edges
     cv::Mat padded_img(Nu+2*Ntu-1, Nv+2*Ntv-2, CV_8U, cv::Scalar(0)); //create image, set encoding and size, init pixels to default val
     //make a checkerboard background; want to pad the image w/ unbiased background
@@ -256,11 +298,11 @@ int main(int argc, char** argv) {
         }
     }    
     */
-    cout<<"result_mat: "<<endl<<result_mat<<endl;
+    //cout<<"result_mat: "<<endl<<result_mat<<endl;
     //cv::normalize(result_mat, result_mat); //, 0, 255); //, cv::NORM_MINMAX, -1, cv::Mat());
     cv::normalize(result_mat, result_mat, 0, 255, cv::NORM_MINMAX, -1, cv::Mat());
 
-    cout<<"normalized result mat: "<<endl<<result_mat<<endl;
+    //cout<<"normalized result mat: "<<endl<<result_mat<<endl;
     cv::imwrite("result_mat.bmp", result_mat);
     
     //find location(s) of best template fits:
@@ -268,25 +310,30 @@ int main(int argc, char** argv) {
     cv::Point minLoc, maxLoc, matchLoc;
     cv::minMaxLoc(result_mat, &minVal, &maxVal, &minLoc, &maxLoc, cv::Mat() );    
     cout<<"best match at: "<<minLoc<<endl;
+    cout<<"maxVal for first match: "<<maxVal<<endl;
+    cout<<"minVal for first match: "<<minVal<<endl;
+
+
     int x_fit = minLoc.x;
     int y_fit = minLoc.y;
     cout<<"x_fit = "<<x_fit<<"; y_fit = "<<y_fit<<endl;
     //erase this match and try again:
-    for (int i=x_fit-Rpix+tu_c;i<=x_fit+Rpix+tu_c;i++) {
-        for (int j=y_fit-Rpix+tv_c;j<=y_fit+Rpix+tv_c;j++) {
+    for (int i=x_fit-Rpix+tu_c-1;i<=x_fit+Rpix+tu_c+1;i++) {
+        for (int j=y_fit-Rpix+tv_c-1;j<=y_fit+Rpix+tv_c+1;j++) {
             padded_img.at<uchar>(i,j) = 0;
         }
     }
     cv::imwrite("padded_img2.bmp", padded_img);
     cv::Mat result_mat2;
     match_method = CV_TM_SQDIFF;
-    
+    //match_method = CV_TM_SQDIFF_NORMED;
     cv::matchTemplate(padded_img, template_img, result_mat2, match_method);
-    cout<<endl<<endl<<endl;
-    cout<<"result_mat2: "<<endl<<result_mat2<<endl;  
+    //cout<<endl<<endl<<endl;
+    //cout<<"result_mat2: "<<endl<<result_mat2<<endl;  
 
 
 //what is going on here?  May ignore this part
+/*
     cv::minMaxLoc(result_mat2, &minVal, &maxVal, &minLoc, &maxLoc, cv::Mat() );    
     cout<<"2nd pass: best match at: "<<minLoc<<endl;      
     for (int i=minLoc.y-5;i<minLoc.y+7;i++) {
@@ -295,16 +342,183 @@ int main(int argc, char** argv) {
     for (int i=minLoc.y-5;i<minLoc.y+7;i++) {
         cout<<"i: "<<i<<";  result(i,u_fit+1): "<<result_mat2.at<float>(i,minLoc.x+1)<<endl;
     }
-
+*/
 
 
     cv::normalize(result_mat2, result_mat2, 0, 255, cv::NORM_MINMAX, -1, cv::Mat());
-
+    
     //cout<<"normalized result mat: "<<endl<<result_mat<<endl;
     cv::imwrite("result_mat2.bmp", result_mat2);    
+    //cv::Point minLoc2, maxLoc2;
+    //double minVal2, maxVal2; 
     cv::minMaxLoc(result_mat2, &minVal, &maxVal, &minLoc, &maxLoc, cv::Mat() );    
-    //cout<<"2nd pass: best match at: "<<minLoc<<endl;    
+    cout<<"2nd pass: best match at: "<<minLoc<<endl;  
+    cout<<"maxVal for second match: "<<maxVal<<endl;  
+    cout<<"minVal for second match: "<<minVal<<endl;  
+
+
+
+
+
+
+
+    x_fit = minLoc.y;
+    y_fit = minLoc.x;
+    cout<<"x_fit = "<<x_fit<<"; y_fit = "<<y_fit<<endl;
+    //erase this match and try again:
+    for (int i=x_fit-Rpix+tu_c-1;i<=x_fit+Rpix+tu_c+1;i++) {
+        for (int j=y_fit-Rpix+tv_c-1;j<=y_fit+Rpix+tv_c+1;j++) {
+            padded_img.at<uchar>(i,j) = 0;
+        }
+    }
+    cv::imwrite("padded_img3.bmp", padded_img);
+    cv::Mat result_mat3;
+    //match_method = CV_TM_SQDIFF;
     
+    cv::matchTemplate(padded_img, template_img, result_mat3, match_method);
+    cout<<endl<<endl<<endl;
+    //cout<<"result_mat3: "<<endl<<result_mat3<<endl;  
+
+    cv::normalize(result_mat3, result_mat3, 0, 255, cv::NORM_MINMAX, -1, cv::Mat());
+
+    //cout<<"normalized result mat: "<<endl<<result_mat<<endl;
+    cv::imwrite("result_mat3.bmp", result_mat3);    
+    cv::minMaxLoc(result_mat3, &minVal, &maxVal, &minLoc, &maxLoc, cv::Mat() );    
+    cout<<"3rd pass: best match at: "<<minLoc<<endl;  
+    cout<<"maxVal for 3rd match: "<<maxVal<<endl;
+    cout<<"minVal for 3rd match: "<<minVal<<endl;
+
+
+
+
+
+
+    x_fit = minLoc.y;
+    y_fit = minLoc.x;
+    cout<<"x_fit = "<<x_fit<<"; y_fit = "<<y_fit<<endl;
+    //erase this match and try again:
+    for (int i=x_fit-Rpix+tu_c-1;i<=x_fit+Rpix+tu_c+1;i++) {
+        for (int j=y_fit-Rpix+tv_c-1;j<=y_fit+Rpix+tv_c+1;j++) {
+            padded_img.at<uchar>(i,j) = 0;
+        }
+    }
+    cv::imwrite("padded_img4.bmp", padded_img);
+    cv::Mat result_mat4;
+    //match_method = CV_TM_SQDIFF;
+    
+    cv::matchTemplate(padded_img, template_img, result_mat4, match_method);
+    cout<<endl<<endl<<endl;
+    //cout<<"result_mat3: "<<endl<<result_mat3<<endl;  
+
+    cv::normalize(result_mat4, result_mat4, 0, 255, cv::NORM_MINMAX, -1, cv::Mat());
+
+    //cout<<"normalized result mat: "<<endl<<result_mat<<endl;
+    cv::imwrite("result_mat4.bmp", result_mat4);    
+    cv::minMaxLoc(result_mat4, &minVal, &maxVal, &minLoc, &maxLoc, cv::Mat() );    
+    cout<<"4 pass: best match at: "<<minLoc<<endl;  
+    cout<<"maxVal for 4 match: "<<maxVal<<endl;
+    cout<<"minVal for 4 match: "<<minVal<<endl;
+
+
+
+
+
+
+    x_fit = minLoc.y;
+    y_fit = minLoc.x;
+    cout<<"x_fit = "<<x_fit<<"; y_fit = "<<y_fit<<endl;
+    //erase this match and try again:
+    for (int i=x_fit-Rpix+tu_c-1;i<=x_fit+Rpix+tu_c+1;i++) {
+        for (int j=y_fit-Rpix+tv_c-1;j<=y_fit+Rpix+tv_c+1;j++) {
+            padded_img.at<uchar>(i,j) = 0;
+        }
+    }
+    cv::imwrite("padded_img5.bmp", padded_img);
+    cv::Mat result_mat5;
+    //match_method = CV_TM_SQDIFF;
+    
+    cv::matchTemplate(padded_img, template_img, result_mat5, match_method);
+    cout<<endl<<endl<<endl;
+    //cout<<"result_mat3: "<<endl<<result_mat3<<endl;  
+
+    cv::normalize(result_mat5, result_mat5, 0, 255, cv::NORM_MINMAX, -1, cv::Mat());
+
+    //cout<<"normalized result mat: "<<endl<<result_mat<<endl;
+    cv::imwrite("result_mat5.bmp", result_mat5);    
+    cv::minMaxLoc(result_mat5, &minVal, &maxVal, &minLoc, &maxLoc, cv::Mat() );    
+    cout<<"5 pass: best match at: "<<minLoc<<endl;  
+    cout<<"maxVal for 5 match: "<<maxVal<<endl;
+    cout<<"minVal for 5 match: "<<minVal<<endl;
+
+
+
+    x_fit = minLoc.y;
+    y_fit = minLoc.x;
+    cout<<"x_fit = "<<x_fit<<"; y_fit = "<<y_fit<<endl;
+    //erase this match and try again:
+    for (int i=x_fit-Rpix+tu_c-1;i<=x_fit+Rpix+tu_c+1;i++) {
+        for (int j=y_fit-Rpix+tv_c-1;j<=y_fit+Rpix+tv_c+1;j++) {
+            padded_img.at<uchar>(i,j) = 0;
+        }
+    }
+    cv::imwrite("padded_img6.bmp", padded_img);
+    cv::Mat result_mat6;
+    //match_method = CV_TM_SQDIFF;
+    
+    cv::matchTemplate(padded_img, template_img, result_mat6, match_method);
+    cout<<endl<<endl<<endl;
+    //cout<<"result_mat3: "<<endl<<result_mat3<<endl;  
+
+    cv::normalize(result_mat6, result_mat6, 0, 255, cv::NORM_MINMAX, -1, cv::Mat());
+
+    //cout<<"normalized result mat: "<<endl<<result_mat<<endl;
+    cv::imwrite("result_mat6.bmp", result_mat6);    
+    cv::minMaxLoc(result_mat6, &minVal, &maxVal, &minLoc, &maxLoc, cv::Mat() );    
+    cout<<"6 pass: best match at: "<<minLoc<<endl;  
+    cout<<"maxVal for 6 match: "<<maxVal<<endl;
+    cout<<"minVal for 6 match: "<<minVal<<endl;
+
+
+    x_fit = minLoc.y;
+    y_fit = minLoc.x;
+    cout<<"x_fit = "<<x_fit<<"; y_fit = "<<y_fit<<endl;
+    //erase this match and try again:
+    for (int i=x_fit-Rpix+tu_c-1;i<=x_fit+Rpix+tu_c+1;i++) {
+        for (int j=y_fit-Rpix+tv_c-1;j<=y_fit+Rpix+tv_c+1;j++) {
+            padded_img.at<uchar>(i,j) = 0;
+        }
+    }
+    cv::imwrite("padded_img7.bmp", padded_img);
+    cv::Mat result_mat7;
+    //match_method = CV_TM_SQDIFF;
+    
+    cv::matchTemplate(padded_img, template_img, result_mat7, match_method);
+    cout<<endl<<endl<<endl;
+    //cout<<"result_mat3: "<<endl<<result_mat3<<endl;  
+
+    cv::normalize(result_mat7, result_mat7, 0, 255, cv::NORM_MINMAX, -1, cv::Mat());
+
+    //cout<<"normalized result mat: "<<endl<<result_mat<<endl;
+    cv::imwrite("result_mat7.bmp", result_mat7);    
+    cv::minMaxLoc(result_mat7, &minVal, &maxVal, &minLoc, &maxLoc, cv::Mat() );    
+    cout<<"7 pass: best match at: "<<minLoc<<endl;  
+    cout<<"maxVal for 7 match: "<<maxVal<<endl;
+    cout<<"minVal for 7 match: "<<minVal<<endl;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
     //cv::namedWindow( "Display_window" );// Create a window for display.
     //cv::imshow( "Display window", src_img );                   // Show our image inside it.
 
