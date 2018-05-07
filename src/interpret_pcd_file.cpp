@@ -220,7 +220,7 @@ if((z_top<0.012)&&(z_top>0.006))
     bin_roll = 0.0;
     bin_pitch = -0.19;
     bin_yall = 3.141591;
-    thickness = 0.01;//thickness of part
+    thickness = 0.01;//thickness of part 
 }
 else if((z_top<0.023)&&(z_top>0.017))
 {
@@ -331,10 +331,7 @@ for (r=0;r<=Rpix;r+=0.2) {
         break;
       }
 
-      //Attention!!!
-      //minLoc.x and minLoc.y are wrong wrt dimention of the whole padded picture, very strange, but it is wrong
-      //ratio is about 76pixels/63pixels ~= 1.20  ,  measured from padded_img.png
-      //double weird_deviation_ratio = 1.20;
+
        
       cout<<"maxVal match: "<<maxVal<<endl;
       cout<<"minVal match: "<<minVal<<endl;
@@ -343,8 +340,8 @@ for (r=0;r<=Rpix;r+=0.2) {
       y_fit[ipart] = minLoc.x;
       cout<<"x_fit = "<<x_fit[ipart]<<"; y_fit = "<<y_fit[ipart]<<endl;
       //erase this match and try again:
-      for (int i=x_fit[ipart]-Rpix+tu_c-1;i<=x_fit[ipart]+Rpix+tu_c+1;i++) {
-          for (int j=y_fit[ipart]-Rpix+tv_c-1;j<=y_fit[ipart]+Rpix+tv_c+1;j++) {
+      for (int i=x_fit[ipart]-Rpix+tu_c;i<=x_fit[ipart]+Rpix+tu_c;i++) {
+          for (int j=y_fit[ipart]-Rpix+tv_c;j<=y_fit[ipart]+Rpix+tv_c;j++) {
               padded_img.at<uchar>(i,j) = 0;
           }
       }
@@ -355,31 +352,31 @@ for (r=0;r<=Rpix;r+=0.2) {
       //cv::imwrite("padded_img2.bmp", padded_img);
     }
     
-    double weird_deviation_ratio = 1.20;
+    
 
 
     //computing world frame of detected parts.
     double pitch_bin = 0.19; //check from gazebo
     double sin_bin_tilt = sin(pitch_bin); //0.1888
     double cos_bin_tilt = cos(pitch_bin); //0.982
-    double middle_x = (double)Ntv + 0.5*(Nv+1); //middle pixel coordinate on padded img 
-    double middle_y = (double)Ntu + 0.5*(Nu+1);
+    double middle_x = (double)Ntv + 0.5*(Nv+1) - template_v_halfwidth; //middle pixel coordinate on padded img 
+    double middle_y = (double)Ntu + 0.5*(Nu+1) - template_v_halfwidth;
     double camera_to_bin_angle = 3.14159 + nom_tilt_ang; //thickness of part may cause deviation in x_wrt_world
     for(int ipart = 0; ipart<npart; ipart++)
     {
       //y_fit = minLoc.x so that erasing formula is right, now converge it back, same for x_fit
-      double x_wrt_bin_pixel = (double)y_fit[ipart]*weird_deviation_ratio - middle_x; 
-      double y_wrt_bin_pixel = (double)x_fit[ipart]*weird_deviation_ratio - middle_y;
-      cout<<"x_wrt_bin_pixel: "<<x_wrt_bin_pixel<<endl;
-      cout<<"y_wrt_bin_pixel: "<<y_wrt_bin_pixel<<endl;
+      double x_wrt_bin_pixel = (double)y_fit[ipart] - middle_x; 
+      double y_wrt_bin_pixel = (double)x_fit[ipart] - middle_y;
+      //cout<<"x_wrt_bin_pixel: "<<x_wrt_bin_pixel<<endl;
+      //cout<<"y_wrt_bin_pixel: "<<y_wrt_bin_pixel<<endl;
       double x_wrt_bin_metric = (double)x_wrt_bin_pixel/meters_to_pixels; 
       double y_wrt_bin_metric = (double)y_wrt_bin_pixel/meters_to_pixels;
 
       //now from bin frame to world frame
       //compensate deviation on x_wrt_wrd resulting from part thickness
-      double x_wrt_wrd = bin_x + y_wrt_bin_metric*cos_bin_tilt + thickness*tan(camera_to_bin_angle);
-      //depth camera not poiting to origin on bin, need to compensate that, tested with fully detected gear parts: 0.004
-      double y_wrt_wrd = bin_y + x_wrt_bin_metric + 0.04;
+      double x_wrt_wrd = bin_x + y_wrt_bin_metric*cos_bin_tilt; // + thickness*tan(camera_to_bin_angle);
+      //depth camera not poiting to origin on bin, need to compensate that, tested with fully detected gear parts: 0.042
+      double y_wrt_wrd = bin_y + x_wrt_bin_metric+ 0.042;
       double z_wrt_wrd = bin_z + z_difference - y_wrt_bin_metric*sin_bin_tilt;
       //keep roll, pitch, yall same with bin frame
       double part_roll = bin_roll;
@@ -389,14 +386,6 @@ for (r=0;r<=Rpix;r+=0.2) {
       cout<<"x: "<<x_wrt_wrd<<"  y: "<<y_wrt_wrd<<"  z: "<<z_wrt_wrd<<endl;
       cout<<"roll: "<<part_roll<<"  pitch: "<<part_pitch<<"  yall: "<<part_yall<<endl;
     }
-
-
-
-
-
-
-
-
 
     //cv::namedWindow( "Display_window" );// Create a window for display.
     //cv::imshow( "Display window", src_img );                   // Show our image inside it.
