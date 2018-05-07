@@ -37,7 +37,8 @@ int main(int argc, char** argv) {
     // expect same transform for all  5 bins
     Eigen::Vector3f plane_normal;
     double nom_tilt_ang = atan2(-0.285, -0.958);
-
+    cout<<"nom_tilt_ang: "<<nom_tilt_ang<<endl;
+    
     plane_normal << cos(nom_tilt_ang), sin(nom_tilt_ang), 0; //-0.958, -0.285, 0;
     double plane_dist = -0.4675;
 
@@ -197,6 +198,9 @@ int main(int argc, char** argv) {
 int Ntu, Ntv, tu_c, tv_c, template_u_halfwidth, template_v_halfwidth, Rpix;
 double r,theta;
 double bin_x, bin_y, bin_z, bin_roll, bin_pitch, bin_yall;
+double z_difference = 0.012;//amout of z value difference from bin to part placed in middle of box.
+//Basicly a fixed number combined by thickness of box bottom and box tilt angle. Checked from Gazebo
+
 //Create template depending on part type
 if((z_top<0.012)&&(z_top>0.006))
 {
@@ -339,6 +343,10 @@ for (r=0;r<=Rpix;r+=0.2) {
       ros::Duration(0.01).sleep();
       //cv::imwrite("padded_img2.bmp", padded_img);
     }
+
+    double pitch_bin = 0.19; //check from gazebo
+    double ratio = tan(pitch_bin);
+    cout<<"ratio = "<<ratio<<endl;
 
     
 
