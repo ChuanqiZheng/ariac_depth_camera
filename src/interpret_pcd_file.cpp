@@ -23,6 +23,7 @@
 #include <opencv2/imgproc/imgproc.hpp>
 #include <opencv2/highgui/highgui.hpp>
 #include <opencv2/core/core.hpp>
+#include <sstream> //need this to change numbers in names
 
 
 using namespace std;
@@ -195,7 +196,8 @@ int main(int argc, char** argv) {
 
 int Ntu, Ntv, tu_c, tv_c, template_u_halfwidth, template_v_halfwidth, Rpix;
 double r,theta;
-//templates
+double bin_x, bin_y, bin_z, bin_roll, bin_pitch, bin_yall;
+//Create template depending on part type
 if((z_top<0.012)&&(z_top>0.006))
 {
     cout<<"Gear part detected!"<<endl;
@@ -206,22 +208,14 @@ if((z_top<0.012)&&(z_top>0.006))
     template_u_halfwidth = 6; //template is +/-5 pixels about center
     template_v_halfwidth = 6;
     Rpix = 5;
-/*
-    //here is the pattern of interest: a circle of diameter Ntu = Ntv pixels
-    //this template is for the "disk" part
-    cv::Mat template_img_(Ntu, Ntv, CV_8U, cv::Scalar(0)); //create image, set encoding and size, init pixels to default val
-     //make a template of a circle of radius 7 pixels
-
-    for (r=0;r<=Rpix;r+=0.2) {
-        for (theta=0;theta<6.28;theta+=0.01) {
-            u= round(r*sin(theta))+tu_c;
-            v= round(r*cos(theta))+tv_c;
-            //cout<<"tu= "<<u<<", tv = "<<v<<endl;
-            template_img_.at<uchar>(u, v) = 255;
-        }
-    }
-    cout<<"created gear template"<<endl;
-    cv::imwrite("template_gear_img.bmp", template_img_);*/
+    //hard code bin pose here, more scientific way is to depend on which depth camera being used
+    //further adjustment need to be done, with specific names of pcd file taken from specific depth cameras
+    bin_x = -0.775;
+    bin_y = -0.49;
+    bin_z = 0.75;
+    bin_roll = 0.0;
+    bin_pitch = -0.19;
+    bin_yall = 3.141591;
 }
 else if((z_top<0.023)&&(z_top>0.017))
 {
@@ -232,20 +226,14 @@ else if((z_top<0.023)&&(z_top>0.017))
     tv_c = 9;
     template_u_halfwidth = 9;
     template_v_halfwidth = 9;
-    Rpix = 7.5;
-    //cv::Mat template_img_(Ntu, Ntv, CV_8U, cv::Scalar(0)); //create image, set encoding and size, init pixels to default val
-    //Rpix = 7.5; //make a template of a circle of radius 7 pixels
-/*
-    for (r=0;r<=Rpix;r+=0.2) {
-        for (theta=0;theta<6.28;theta+=0.01) {
-            u= round(r*sin(theta))+tu_c;
-            v= round(r*cos(theta))+tv_c;
-            //cout<<"tu= "<<u<<", tv = "<<v<<endl;
-            template_img_.at<uchar>(u, v) = 255;
-        }
-    }
-    cout<<"created disk template"<<endl;
-    cv::imwrite("template_disk_img.bmp", template_img_); */
+    Rpix = 7.0;
+
+    bin_x = -0.775;
+    bin_y = 0.32;
+    bin_z = 0.75;
+    bin_roll = 0.0;
+    bin_pitch = -0.19;
+    bin_yall = 3.141591;
 }
 else if((z_top<0.075)&&(z_top>0.069))
 {
@@ -257,19 +245,18 @@ else if((z_top<0.075)&&(z_top>0.069))
     template_u_halfwidth = 15;
     template_v_halfwidth = 15;
     Rpix = 12.5;
-    //cv::Mat template_img_(Ntu, Ntv, CV_8U, cv::Scalar(0)); //create image, set encoding and size, init pixels to default val
-    //Rpix = 12.5; //make a template of a circle of radius 7 pixels
-/*
-    for (r=0;r<=Rpix;r+=0.2) {
-        for (theta=0;theta<6.28;theta+=0.01) {
-            u= round(r*sin(theta))+tu_c;
-            v= round(r*cos(theta))+tv_c;
-            //cout<<"tu= "<<u<<", tv = "<<v<<endl;
-            template_img_.at<uchar>(u, v) = 255;
-        }
-    }
-    cout<<"created pulley template"<<endl;
-    cv::imwrite("template_pulley_img.bmp", template_img_);*/
+
+    bin_x = -0.775;
+    bin_y = 1.94;
+    bin_z = 0.75;
+    bin_roll = 0.0;
+    bin_pitch = -0.19;
+    bin_yall = 3.141591;
+}
+else
+{
+    cout<<"No bin/ Empty bin/ Not gear or disk or pulley"<<endl;
+    return 0;
 }
 cv::Mat template_img(Ntu, Ntv, CV_8U, cv::Scalar(0));
 for (r=0;r<=Rpix;r+=0.2) {
@@ -283,52 +270,6 @@ for (r=0;r<=Rpix;r+=0.2) {
     cout<<"created template"<<endl;
     cv::imwrite("template_img.bmp", template_img);
 
-
-
-
-
-
-/*
-//template of gear part.
-    int Ntu = 13; //define template 10x10 (arbitrary)
-    int Ntv = 13; 
-    int tu_c = 6; //(7,7) is central pixel of template 15x15 template
-    int tv_c = 6;
-    int template_u_halfwidth = 6; //template is +/-5 pixels about center
-    int template_v_halfwidth = 6;
-    //here is the pattern of interest: a circle of diameter Ntu = Ntv pixels
-    //this template is for the "disk" part
-    cv::Mat template_gear_img(Ntu, Ntv, CV_8U, cv::Scalar(0)); //create image, set encoding and size, init pixels to default val
-    int Rpix = 5; //make a template of a circle of radius 7 pixels
-    double r,theta;
-    for (r=0;r<=Rpix;r+=0.2) {
-        for (theta=0;theta<6.28;theta+=0.01) {
-            u= round(r*sin(theta))+tu_c;
-            v= round(r*cos(theta))+tv_c;
-            //cout<<"tu= "<<u<<", tv = "<<v<<endl;
-            template_gear_img.at<uchar>(u, v) = 255;
-        }
-    }
-    cout<<"created gear template"<<endl;
-    cv::imwrite("template_gear_img.bmp", template_gear_img); 
-*/
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-   
-    
 
 
     //create a larger image with room for padding around the edges
@@ -351,7 +292,7 @@ for (r=0;r<=Rpix;r+=0.2) {
         }
     }    
     cout<<"padded image with checkerboard"<<endl;
-    cv::imwrite("padded_img.bmp", padded_img);
+    cv::imwrite("padded_img_1.bmp", padded_img);
     
     //now compute distance between template and snippets of image, and put results into another image
     cv::Mat result_mat[20];  //put result of template matching in this output matrix; 
@@ -363,13 +304,16 @@ for (r=0;r<=Rpix;r+=0.2) {
     int match_method = CV_TM_SQDIFF;
     double minVal, maxVal; 
     cv::Point minLoc, maxLoc, matchLoc;
-    int npart, x_fit[20], y_fit[20]; //set a maximum number of parts in one single bin
-
-    for(int ipart = 0;ipart<20;ipart++)
+    int npart, x_fit[20], y_fit[20];
+    for(int ipart = 0;ipart<20;ipart++) //set a maximum number of parts in one single bin
     {
       cv::matchTemplate(padded_img, template_img, result_mat[ipart], match_method);
       cv::normalize(result_mat[ipart], result_mat[ipart], 0, 255, cv::NORM_MINMAX, -1, cv::Mat());
       //cv::imwrite("result_mat.bmp", result_mat[ipart]);
+      std::ostringstream result_mat_name;
+      result_mat_name << "result_mat_" << ipart+1 << ".png";
+      cv::imwrite(result_mat_name.str(), result_mat[ipart]);
+      ros::Duration(0.01).sleep();
       cv::minMaxLoc(result_mat[ipart], &minVal, &maxVal, &minLoc, &maxLoc, cv::Mat() );
       if ((minVal == 0)||(abs(minVal)>0.0001))
       {
@@ -389,20 +333,14 @@ for (r=0;r<=Rpix;r+=0.2) {
               padded_img.at<uchar>(i,j) = 0;
           }
       }
+      std::ostringstream padded_img_name;
+      padded_img_name << "padded_img_" << ipart+2 << ".png";
+      cv::imwrite(padded_img_name.str(), padded_img);
+      ros::Duration(0.01).sleep();
       //cv::imwrite("padded_img2.bmp", padded_img);
     }
 
-
-
-
-
-
-
-
-
-
-
-
+    
 
 
 
