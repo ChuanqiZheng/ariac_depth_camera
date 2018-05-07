@@ -277,7 +277,8 @@ for (r=0;r<=Rpix;r+=0.2) {
 
 
     //create a larger image with room for padding around the edges
-    cv::Mat padded_img(Nu+2*Ntu-1, Nv+2*Ntv-2, CV_8U, cv::Scalar(0)); //create image, set encoding and size, init pixels to default val
+    //cv::Mat padded_img(Nu+2*Ntu-1, Nv+2*Ntv-2, CV_8U, cv::Scalar(0)); //create image, set encoding and size, init pixels to default val
+    cv::Mat padded_img(Nu+2*Ntu, Nv+2*Ntv, CV_8U, cv::Scalar(0));
     //make a checkerboard background; want to pad the image w/ unbiased background
     //start by making this entire image a checkerboard
     /* try w/o checkerboard
@@ -292,7 +293,8 @@ for (r=0;r<=Rpix;r+=0.2) {
         for (v=0;v<Nv;v++) {
             //leaves edges of halfwidth of template with unbiased (checkerboard) padding
             //padded_img.at<uchar>(u+Ntu-1, v+Ntv-1) = embedded_img.at<uchar>(u, v);
-            padded_img.at<uchar>(u+Ntu-1, v+Ntv-1) = depthmap_image.at<uchar>(u, v); //use real image    
+            //padded_img.at<uchar>(u+Ntu-1, v+Ntv-1) = depthmap_image.at<uchar>(u, v); //use real image   
+            padded_img.at<uchar>(u+Ntu, v+Ntv) = depthmap_image.at<uchar>(u, v); 
         }
     }    
     cout<<"padded image with checkerboard"<<endl;
@@ -344,11 +346,34 @@ for (r=0;r<=Rpix;r+=0.2) {
       //cv::imwrite("padded_img2.bmp", padded_img);
     }
 
-    double pitch_bin = 0.19; //check from gazebo
-    double ratio = tan(pitch_bin);
-    cout<<"ratio = "<<ratio<<endl;
 
-    
+
+    //computing world frame of detected parts.
+    double pitch_bin = 0.19; //check from gazebo
+    double sin_bin_tilt = sin(pitch_bin); //0.1888
+    double cos_bin_tilt = cos(pitch_bin); //0.982
+    double middle_x = (double)Ntv + 0.5*(Nv+1); //middle pixel coordinate on padded img 
+    double middle_y = (double)Ntu + 0.5*(Nu+1);
+    for(int ipart = 0; ipart<npart; ipart++)
+    {
+      //y_fit = minLoc.x so that erasing formula is right, now converge it back, same for x_fit
+      double x_wrt_bin_pixel = (double)y_fit[ipart] - middle_x; 
+      double y_wrt_bin_pixel = (double)x_fit[ipart] - middle_y;
+      double x_wrt_bin_metric = (double)x_wrt_bin_pixel/meters_to_pixels; 
+      double y_wrt_bin_metric = (double)y_wrt_bin_pixel/meters_to_pixels;
+
+      //now from bin frame to world frame
+      double x_wrt_wrd = bin_x + y_wrt_bin_metric*cos_bin_tilt;
+      double y_wrt_wrd = bin_y + x_wrt_bin_metric;
+      double z_wrt_wrd = bin_z + z_difference - y_wrt_bin_metric*sin_bin_tilt;
+      //keep roll, pitch, yall same with bin frame
+      double part_roll = bin_roll;
+      double part_pitch = bin_pitch;
+      double part_yall = bin_yall;
+      cout<<"part number "<<ipart+1<<", in world frame: "<<endl;
+      cout<<"x: "<<x_wrt_wrd<<"  y: "<<y_wrt_wrd<<"  z: "<<z_wrt_wrd<<endl;
+      cout<<"roll: "<<part_roll<<"  pitch: "<<part_pitch<<"  yall: "<<part_yall<<endl;
+    }
 
 
 
