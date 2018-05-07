@@ -194,7 +194,7 @@ int main(int argc, char** argv) {
             template_img.at<uchar>(u, v) = 255;
         }
     }*/
-
+double thickness;
 int Ntu, Ntv, tu_c, tv_c, template_u_halfwidth, template_v_halfwidth, Rpix;
 double r,theta;
 double bin_x, bin_y, bin_z, bin_roll, bin_pitch, bin_yall;
@@ -220,6 +220,7 @@ if((z_top<0.012)&&(z_top>0.006))
     bin_roll = 0.0;
     bin_pitch = -0.19;
     bin_yall = 3.141591;
+    thickness = 0.01;//thickness of part
 }
 else if((z_top<0.023)&&(z_top>0.017))
 {
@@ -238,6 +239,7 @@ else if((z_top<0.023)&&(z_top>0.017))
     bin_roll = 0.0;
     bin_pitch = -0.19;
     bin_yall = 3.141591;
+    thickness = 0.02;
 }
 else if((z_top<0.075)&&(z_top>0.069))
 {
@@ -256,6 +258,7 @@ else if((z_top<0.075)&&(z_top>0.069))
     bin_roll = 0.0;
     bin_pitch = -0.19;
     bin_yall = 3.141591;
+    thickness = 0.07;
 }
 else
 {
@@ -327,6 +330,12 @@ for (r=0;r<=Rpix;r+=0.2) {
         cout<<ipart<<" parts in total."<<endl;
         break;
       }
+
+      //Attention!!!
+      //minLoc.x and minLoc.y are wrong wrt dimention of the whole padded picture, very strange, but it is wrong
+      //ratio is about 76pixels/63pixels ~= 1.20  ,  measured from padded_img.png
+      //double weird_deviation_ratio = 1.20;
+       
       cout<<"maxVal match: "<<maxVal<<endl;
       cout<<"minVal match: "<<minVal<<endl;
       cout<<"Part number "<<ipart+1<<", best match at: "<<minLoc<<endl;
@@ -345,7 +354,8 @@ for (r=0;r<=Rpix;r+=0.2) {
       ros::Duration(0.01).sleep();
       //cv::imwrite("padded_img2.bmp", padded_img);
     }
-
+    
+    double weird_deviation_ratio = 1.20;
 
 
     //computing world frame of detected parts.
@@ -354,17 +364,22 @@ for (r=0;r<=Rpix;r+=0.2) {
     double cos_bin_tilt = cos(pitch_bin); //0.982
     double middle_x = (double)Ntv + 0.5*(Nv+1); //middle pixel coordinate on padded img 
     double middle_y = (double)Ntu + 0.5*(Nu+1);
+    double camera_to_bin_angle = 3.14159 + nom_tilt_ang; //thickness of part may cause deviation in x_wrt_world
     for(int ipart = 0; ipart<npart; ipart++)
     {
       //y_fit = minLoc.x so that erasing formula is right, now converge it back, same for x_fit
-      double x_wrt_bin_pixel = (double)y_fit[ipart] - middle_x; 
-      double y_wrt_bin_pixel = (double)x_fit[ipart] - middle_y;
+      double x_wrt_bin_pixel = (double)y_fit[ipart]*weird_deviation_ratio - middle_x; 
+      double y_wrt_bin_pixel = (double)x_fit[ipart]*weird_deviation_ratio - middle_y;
+      cout<<"x_wrt_bin_pixel: "<<x_wrt_bin_pixel<<endl;
+      cout<<"y_wrt_bin_pixel: "<<y_wrt_bin_pixel<<endl;
       double x_wrt_bin_metric = (double)x_wrt_bin_pixel/meters_to_pixels; 
       double y_wrt_bin_metric = (double)y_wrt_bin_pixel/meters_to_pixels;
 
       //now from bin frame to world frame
-      double x_wrt_wrd = bin_x + y_wrt_bin_metric*cos_bin_tilt;
-      double y_wrt_wrd = bin_y + x_wrt_bin_metric;
+      //compensate deviation on x_wrt_wrd resulting from part thickness
+      double x_wrt_wrd = bin_x + y_wrt_bin_metric*cos_bin_tilt + thickness*tan(camera_to_bin_angle);
+      //depth camera not poiting to origin on bin, need to compensate that, tested with fully detected gear parts: 0.004
+      double y_wrt_wrd = bin_y + x_wrt_bin_metric + 0.04;
       double z_wrt_wrd = bin_z + z_difference - y_wrt_bin_metric*sin_bin_tilt;
       //keep roll, pitch, yall same with bin frame
       double part_roll = bin_roll;
